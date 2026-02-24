@@ -1,0 +1,22 @@
+# NOTE: you must have previously generated Sarif 2.1 files before running this task with the extension .sarif.json
+# Use the SOOS SAST Docker CLI if you do not have a task generating Sarif 2.1 files
+
+on:
+  workflow_dispatch
+
+env:
+  PROJECT_NAME: Verademo
+
+jobs:
+
+  soos_sast_scan:
+    name: SOOS SAST Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Run SOOS SAST Scan
+        uses: soos-io/soos-sast-github-action@v1
+        with:
+          client_id: ${{ secrets.SOOS_CLIENT_ID }}
+          api_key: ${{ secrets.SOOS_API_KEY }}
+          project_name: $PROJECT_NAME
