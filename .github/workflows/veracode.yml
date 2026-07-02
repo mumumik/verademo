@@ -19,7 +19,7 @@ jobs:
           ./mvnw clean package -DskipTests
 
       - name: Veracode Upload and Scan
-        uses: veracode/veracode-uploadandscan-action@latest
+        uses: veracode/veracode-uploadandscan-action@0.2.11
         with:
           appname: verademo
           createprofile: true
