@@ -1,0 +1,28 @@
+name: Veracode Scan
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  veracode:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: |
+          chmod +x mvnw
+          ./mvnw clean package -DskipTests
+
+      - name: Veracode Upload and Scan
+        uses: veracode/veracode-uploadandscan-action@0.2.7
+        with:
+          appname: verademo
+          createprofile: true
+          filepath: app/target
+          vid: ${{ secrets.VERACODE_API_ID }}
+          vkey: ${{ secrets.VERACODE_API_KEY }}
