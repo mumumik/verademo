@@ -1,10 +1,7 @@
 name: Veracode Scan
 
 on:
-  pull_request:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   veracode:
@@ -13,21 +10,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Show repository structure
-        run: |
-          pwd
-          ls -la
-          find . -maxdepth 2 -type f | sort
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Build
+        working-directory: app
         run: mvn clean package -DskipTests
 
-      - name: Veracode Upload and Scan
+      - name: Show target
+        run: ls -R app/target
+
+      - name: Upload and Scan
         uses: veracode/veracode-uploadandscan-action@0.2.11
         with:
           appname: verademo
