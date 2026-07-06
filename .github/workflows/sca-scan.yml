@@ -24,4 +24,4 @@ jobs:
           create-issues: true   
       
       - name: Display scan URL
-        run: echo "View detailed report at: ${{ steps.veracode-sca.outputs.scan-url }}"
+        run: echo "View detailed report at ${{ steps.veracode-sca.outputs.scan-url }}"
