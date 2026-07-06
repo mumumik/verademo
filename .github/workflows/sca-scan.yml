@@ -21,7 +21,8 @@ jobs:
         uses: veracode/veracode-sca@v2.1.10
         with:
           github_token: ${{ secrets.VERACODE_GITHUB_PAT }}
-          create-issues: true   
+          create-issues: true
+          path: app
       
       - name: Display scan URL
         run: echo "View detailed report at ${{ steps.veracode-sca.outputs.scan-url }}"
