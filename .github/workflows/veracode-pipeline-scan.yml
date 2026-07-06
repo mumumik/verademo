@@ -39,5 +39,5 @@ jobs:
           vkey: ${{ secrets.VERACODE_API_KEY }}
           file: ${{ env.FILE }}
           fail_build: true
-          fail_on_severity: "VeryHigh"
+          fail_on_severity: "VeryHigh,High"
           # fail_on_cwe: "78,89"
