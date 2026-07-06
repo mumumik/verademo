@@ -38,6 +38,6 @@ jobs:
           vid: ${{ secrets.VERACODE_API_ID }}
           vkey: ${{ secrets.VERACODE_API_KEY }}
           file: ${{ env.FILE }}
-          # fail_build: true # fail the pipeline if finding found
-          # fail_on_severity: "VeryHigh,High" # only scan for Very High and High finding
-          fail_on_cwe: "78,89,80"
+          # fail_on_severity: "VeryHigh,High" # only scan for Very High and High finding, but not failing the pipeline
+          fail_on_cwe: "78,89,80" # scan for specific cwe, but not failing the pipeline. also other finding from very high to very low still scanned
+          fail_build: true # fail the pipeline if finding found
