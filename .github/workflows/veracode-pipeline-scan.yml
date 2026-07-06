@@ -21,9 +21,16 @@ jobs:
         working-directory: app
         run: mvn package -DskipTests
 
+      - name: Find artifact
+        id: artifact
+        run: |
+          FILE=$(find app/target -maxdepth 1 \( -name "*.jar" -o -name "*.war" \) | head -n 1)
+          echo "FILE=$FILE" >> "$GITHUB_ENV"
+          echo "Found: $FILE"
+
       - name: Pipeline Scan
         uses: veracode/Veracode-pipeline-scan-action@v1.0.22
         with:
           vid: ${{ secrets.VERACODE_API_ID }}
           vkey: ${{ secrets.VERACODE_API_KEY }}
-          file: app/target/...
+          file: ${{ env.FILE }}
