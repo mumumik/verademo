@@ -38,5 +38,6 @@ jobs:
           vid: ${{ secrets.VERACODE_API_ID }}
           vkey: ${{ secrets.VERACODE_API_KEY }}
           file: ${{ env.FILE }}
-          fail_on_severity: "Very High,High"
+          fail_build: true
+          fail_on_severity: "Very High, High"
           # fail_on_cwe: "78,89"
