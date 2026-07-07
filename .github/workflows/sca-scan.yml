@@ -21,7 +21,7 @@ jobs:
         uses: veracode/veracode-sca@v2.1.19
         with:
           github_token: ${{ secrets.VERACODE_GITHUB_PAT }}
-          create-issues: false
+          create-issues: true
           path: app
       
       - name: Display scan URL
