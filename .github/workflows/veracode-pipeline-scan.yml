@@ -1,0 +1,43 @@
+name: Veracode Pipeline Scan
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Build
+        working-directory: app
+        run: mvn package -DskipTests
+
+      - name: Find artifact
+        id: artifact
+        run: |
+          FILE=$(find app/target -maxdepth 1 \( -name "*.jar" -o -name "*.war" \) | head -n 1)
+          echo "FILE=$FILE" >> "$GITHUB_ENV"
+          echo "Found: $FILE"
+
+      - name: Pipeline Scan
+        uses: veracode/Veracode-pipeline-scan-action@v1.0.22
+        with:
+          vid: ${{ secrets.VERACODE_API_ID }}
+          vkey: ${{ secrets.VERACODE_API_KEY }}
+          file: ${{ env.FILE }}
+          # fail_on_severity: "VeryHigh,High" # only scan for Very High and High finding, but not failing the pipeline
+          fail_on_cwe: "78,89,80" # scan for specific cwe, but not failing the pipeline. also other finding from very high to very low still scanned
+          fail_build: true # fail the pipeline if finding found
