@@ -41,6 +41,12 @@ jobs:
           fail_on_severity: "VeryHigh,High" # only scan for Very High and High finding, but not failing the pipeline
           fail_on_cwe: "78,89,80" # scan for specific cwe, but not failing the pipeline. also other finding from very high to very low still scanned
           fail_build: false # fail the pipeline if finding found
+      
+      - name: Upload Veracode Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: Veracode Pipeline-Scan Results
+          path: filtered_results.json
   
   veracode-fix:
     runs-on: ubuntu-latest
