@@ -38,6 +38,29 @@ jobs:
           vid: ${{ secrets.VERACODE_API_ID }}
           vkey: ${{ secrets.VERACODE_API_KEY }}
           file: ${{ env.FILE }}
-          # fail_on_severity: "VeryHigh,High" # only scan for Very High and High finding, but not failing the pipeline
+          fail_on_severity: "VeryHigh,High" # only scan for Very High and High finding, but not failing the pipeline
           fail_on_cwe: "78,89,80" # scan for specific cwe, but not failing the pipeline. also other finding from very high to very low still scanned
           fail_build: true # fail the pipeline if finding found
+  
+  veracode-fix:
+    runs-on: ubuntu-latest
+    needs: scan
+    name: Veracode Fix
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v3
+
+      - name: get flaw file
+        uses: actions/download-artifact@v4
+        with:
+          name: Veracode Pipeline-Scan Results
+          
+      - name: Create fixes from static findings
+        id: convert
+        uses: Veracode/veracode-fix@main
+        with:
+          inputFile: filtered_results.json
+          vid: ${{ secrets.VERACODE_API_ID }}
+          vkey: ${{ secrets.VERACODE_API_KEY }}
+          prComment: true
+          fixType: batch
