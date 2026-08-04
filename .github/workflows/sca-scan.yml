@@ -1,0 +1,29 @@
+name: Veracode SCA Scan
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  veracode-sca-task:
+    runs-on: ubuntu-latest
+    name: Scan repository with Veracode SCA
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Run Veracode SCA
+        id: veracode-sca
+        env:
+          SRCCLR_API_TOKEN: ${{ secrets.VERACODE_AGENT_TOKEN }}
+        uses: veracode/veracode-sca@v2.1.19
+        with:
+          github_token: ${{ secrets.VERACODE_GITHUB_PAT }}
+          create-issues: true
+          path: app
+  
+      
+      - name: Display scan URL
+        run: echo "View detailed report at ${{ steps.veracode-sca.outputs.scan-url }}"
