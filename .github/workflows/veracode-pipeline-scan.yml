@@ -1,0 +1,80 @@
+name: Veracode Pipeline Scan
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Build
+        working-directory: app
+        run: mvn package -DskipTests
+
+      - name: Find artifact
+        id: artifact
+        run: |
+          FILE=$(find app/target -maxdepth 1 \( -name "*.jar" -o -name "*.war" \) | head -n 1)
+          echo "FILE=$FILE" >> "$GITHUB_ENV"
+          echo "Found: $FILE"
+
+      - name: Pipeline Scan
+        uses: veracode/Veracode-pipeline-scan-action@v1.0.22
+        with:
+          vid: ${{ secrets.VERACODE_API_ID }}
+          vkey: ${{ secrets.VERACODE_API_KEY }}
+          file: ${{ env.FILE }}
+          # fail_on_severity: "VeryHigh,High" # only scan for Very High and High finding, but not failing the pipeline
+          # fail_on_cwe: "78,89,80" # scan for specific cwe, but not failing the pipeline. also other finding from very high to very low still scanned
+          esd: true # enable enhanced static analysis
+          fail_build: false # fail the pipeline if finding found
+      
+      - name: Upload Veracode Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: Veracode Pipeline-Scan Results
+          path: results.json
+  
+  veracode-fix:
+    runs-on: ubuntu-latest
+    needs: scan
+    name: Veracode Fix
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v4
+
+      - name: get flaw file
+        uses: actions/download-artifact@v4
+        with:
+          name: Veracode Pipeline-Scan Results
+
+      - name: Link source root so paths match results.json
+        run: |
+          echo "searching for the source root:"
+          find app -type d -name controller
+          ln -s app/src/main/java/com com
+
+      - name: Create fixes from static findings
+        id: convert
+        uses: Veracode/veracode-fix@v1.0.5
+        with:
+          inputFile: results.json
+          vid: ${{ secrets.VERACODE_API_ID }}
+          vkey: ${{ secrets.VERACODE_API_KEY }}
+          prComment: false
+          fixType: batch
+          createPR: true
