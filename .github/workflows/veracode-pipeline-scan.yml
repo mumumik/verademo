@@ -40,6 +40,7 @@ jobs:
           file: ${{ env.FILE }}
           # fail_on_severity: "VeryHigh,High" # only scan for Very High and High finding, but not failing the pipeline
           # fail_on_cwe: "78,89,80" # scan for specific cwe, but not failing the pipeline. also other finding from very high to very low still scanned
+          esd: true # enable enhanced static analysis
           fail_build: false # fail the pipeline if finding found
       
       - name: Upload Veracode Results
@@ -54,7 +55,7 @@ jobs:
     name: Veracode Fix
     steps:
       - name: checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: get flaw file
         uses: actions/download-artifact@v4
