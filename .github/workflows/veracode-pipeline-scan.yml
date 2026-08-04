@@ -75,6 +75,6 @@ jobs:
           inputFile: results.json
           vid: ${{ secrets.VERACODE_API_ID }}
           vkey: ${{ secrets.VERACODE_API_KEY }}
-          prComment: true
+          prComment: false
           fixType: batch
           createPR: true
