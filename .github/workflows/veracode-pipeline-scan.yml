@@ -61,13 +61,18 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: Veracode Pipeline-Scan Results
-          
+
+      - name: Link source root so paths match results.json
+        run: |
+          echo "searching for the source root:"
+          find app -type d -name controller
+          ln -s app/src/main/java/com com
+
       - name: Create fixes from static findings
         id: convert
-        uses: Veracode/veracode-fix@v1.0.5 
-        working-directory: app/src/main/java
+        uses: Veracode/veracode-fix@v1.0.5
         with:
-          inputFile: ${{ github.workspace }}/results.json
+          inputFile: results.json
           vid: ${{ secrets.VERACODE_API_ID }}
           vkey: ${{ secrets.VERACODE_API_KEY }}
           prComment: true
