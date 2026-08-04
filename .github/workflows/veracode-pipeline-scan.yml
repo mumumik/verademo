@@ -46,7 +46,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Veracode Pipeline-Scan Results
-          path: filtered_results.json
+          path: results.json
   
   veracode-fix:
     runs-on: ubuntu-latest
@@ -65,8 +65,9 @@ jobs:
         id: convert
         uses: Veracode/veracode-fix@v1.0.5 
         with:
-          inputFile: filtered_results.json
+          inputFile: results.json
           vid: ${{ secrets.VERACODE_API_ID }}
           vkey: ${{ secrets.VERACODE_API_KEY }}
           prComment: true
           fixType: batch
+          createPR: true
