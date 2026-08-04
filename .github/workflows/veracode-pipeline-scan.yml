@@ -76,6 +76,7 @@ jobs:
           vid: ${{ secrets.VERACODE_API_ID }}
           vkey: ${{ secrets.VERACODE_API_KEY }}
           cwe: '89'
+          files: all
           prComment: false
           fixType: batch
           createPR: true
