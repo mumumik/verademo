@@ -1,7 +1,6 @@
 name: Veracode Scan
 
 on: 
-  pull_request: 
   push: 
     branches: 
       - main

@@ -1,0 +1,183 @@
+name: Veracode Security Scan
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+
+  # ============================================================
+  # 1. Veracode Pipeline Scan - SAST
+  # ============================================================
+  pipeline-scan:
+    runs-on: ubuntu-latest
+    name: Veracode Pipeline Scan
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Build
+        working-directory: app
+        run: mvn package -DskipTests
+
+      - name: Find artifact
+        run: |
+          FILE=$(find app/target -maxdepth 1 \
+            \( -name "*.jar" -o -name "*.war" \) \
+            | head -n 1)
+
+          if [ -z "$FILE" ]; then
+            echo "No JAR/WAR artifact found"
+            exit 1
+          fi
+
+          echo "FILE=$FILE" >> "$GITHUB_ENV"
+          echo "Found: $FILE"
+
+      - name: Pipeline Scan
+        uses: veracode/Veracode-pipeline-scan-action@v1.0.22
+        with:
+          vid: ${{ secrets.VERACODE_API_ID }}
+          vkey: ${{ secrets.VERACODE_API_KEY }}
+          file: ${{ env.FILE }}
+          esd: true
+          fail_build: false
+
+      - name: Upload Pipeline Scan Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: Veracode-Pipeline-Scan-Results
+          path: results.json
+
+
+  # ============================================================
+  # 2. Veracode Container Security - IaC + Secrets
+  # ============================================================
+  iac-secrets-scan:
+    runs-on: ubuntu-latest
+    name: Veracode IaC and Secrets Scan
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Veracode IaC and Secrets Scan
+        uses: veracode/container_iac_secrets_scanning@v1.0.8
+        with:
+          vid: ${{ secrets.VERACODE_API_ID }}
+          vkey: ${{ secrets.VERACODE_API_KEY }}
+          command: scan
+          type: directory
+          source: ./
+          format: json
+          debug: false
+          fail_build: false
+          generate_sbom_output: true
+
+      - name: Upload IaC and Secrets Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: Veracode-IaC-Secrets-Results
+          path: |
+            *.json
+            *.xml
+            *.spdx
+            *.txt
+          if-no-files-found: warn
+
+
+  # ============================================================
+  # 3. Build + Container Security Scan
+  # ============================================================
+  container-scan:
+    runs-on: ubuntu-latest
+    name: Build and Veracode Container Scan
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: |
+          docker build \
+            --tag blab:${{ github.sha }} \
+            .
+
+      - name: Show Docker Image
+        run: |
+          docker image inspect blab:${{ github.sha }}
+          docker images blab
+
+      - name: Veracode Container Scan
+        uses: veracode/container_iac_secrets_scanning@v1.0.8
+        with:
+          vid: ${{ secrets.VERACODE_API_ID }}
+          vkey: ${{ secrets.VERACODE_API_KEY }}
+          command: scan
+          type: image
+          source: blab:${{ github.sha }}
+          format: json
+          debug: false
+          fail_build: false
+          generate_sbom_output: true
+
+      - name: Upload Container Scan Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: Veracode-Container-Scan-Results
+          path: |
+            *.json
+            *.xml
+            *.spdx
+            *.txt
+          if-no-files-found: warn
+
+
+  # ============================================================
+  # 4. Veracode Fix
+  # ============================================================
+  veracode-fix:
+    runs-on: ubuntu-latest
+    name: Veracode Fix
+    needs: pipeline-scan
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Pipeline Scan Results
+        uses: actions/download-artifact@v4
+        with:
+          name: Veracode-Pipeline-Scan-Results
+
+      - name: Link source root so paths match results.json
+        run: |
+          echo "Searching for the source root:"
+          find app -type d -name controller
+
+          ln -s app/src/main/java com
+
+      - name: Create fixes from static findings
+        id: convert
+        uses: Veracode/veracode-fix@v1.0.5
+        with:
+          inputFile: results.json
+          vid: ${{ secrets.VERACODE_API_ID }}
+          vkey: ${{ secrets.VERACODE_API_KEY }}
+          cwe: '89'
+          files: all
+          prComment: false
+          fixType: batch
+          createPR: true
